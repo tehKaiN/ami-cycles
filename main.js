@@ -38,19 +38,62 @@ function dma(bpp) {
 function dmaVisualizer(canvas, dma) {
 	this.canvas = canvas;
 	this.pixelSize = 3;
-	this.dmaSpacing = 2;
+	this.dmaSpacing = 1;
 	this.dma = dma;
 
 	var dmaWidth = 2 * this.pixelSize;
-	canvas.width = this.dmaSpacing
-		+ this.dma.cyclesInRow * (this.dmaSpacing + dmaWidth);
-	canvas.height = this.dmaSpacing
-		+ this.dma.cycleRows * (this.dmaSpacing + this.pixelSize);
+	this.canvasLimits = {
+		w: this.dmaSpacing
+			+ this.dma.cyclesInRow * (this.dmaSpacing + dmaWidth),
+		h: this.dmaSpacing
+			+ this.dma.cycleRows * (this.dmaSpacing + this.pixelSize)
+	}
 	this.ctx = canvas.getContext('2d');
+
+	canvas.visualizer = this;
+	canvas.pos = {x: 0, y: 0};
+	canvas.scale = 1.0;
+	canvas.width = 640;
+	canvas.height = 480;
+
+	canvas.onmousedown = function(e) {
+		this.isDragged = true;
+		this.dragStart = {
+			x: e.clientX, y: e.clientY
+		};
+	}
+
+	canvas.onmousemove = function(e) {
+		if(this.isDragged) {
+			this.pos.x += e.clientX - this.dragStart.x;
+			this.pos.y += e.clientY - this.dragStart.y;
+
+			this.dragStart.x = e.clientX;
+			this.dragStart.y = e.clientY;
+			this.visualizer.drawGrid();
+		}
+	}
+
+	canvas.onmouseup = function(e) {
+		this.isDragged = false;
+	}
+
+	canvas.onwheel = function(e) {
+		var clamp = function(x, bottom, top) {return Math.min(Math.max(x, bottom), top);};
+		this.scale = clamp(this.scale - Math.sign(e.deltaY), 1, 20);
+
+		this.visualizer.pixelSize = this.scale;
+		this.visualizer.drawGrid();
+		return false;
+	}
 }
 
-dmaVisualizer.prototype.generateGrid = function () {
+dmaVisualizer.prototype.drawGrid = function () {
+	if(this.isDrawing) {
+		return;
+	}
 	var dmaSize = this.pixelSize * 2;
+	this.isDrawing = true;
 
 	// BG
 	this.ctx.fillStyle = '#000';
@@ -58,7 +101,21 @@ dmaVisualizer.prototype.generateGrid = function () {
 
 	// Draw cycle grid
 	for (var y = 0; y < this.dma.cycleRows; ++y) {
+		var clientY = this.canvas.pos.y + this.dmaSpacing + (this.dmaSpacing + this.pixelSize) * y;
+		if(clientY < -(2*this.dmaSpacing + this.pixelSize)) {
+			continue;
+		}
+		if(clientY > this.canvas.height) {
+			break;
+		}
 		for (var x = 0; x < this.dma.cyclesInRow; ++x) {
+			var clientX = this.canvas.pos.x + this.dmaSpacing + (this.dmaSpacing + dmaSize) * x;
+			if(clientX < -(2*this.dmaSpacing + dmaSize)) {
+				continue;
+			}
+			if(clientX > this.canvas.width) {
+				break;
+			}
 			if(this.dma.slots[x][y].isAbleBitplane) {
 				// Bitplane DMA
 				this.ctx.fillStyle = '#00F';
@@ -69,13 +126,10 @@ dmaVisualizer.prototype.generateGrid = function () {
 			else {
 				this.ctx.fillStyle = '#FFF';
 			}
-			this.ctx.fillRect(
-				this.dmaSpacing + (this.dmaSpacing + dmaSize) * x,
-				this.dmaSpacing + (this.dmaSpacing + this.pixelSize) * y,
-				dmaSize, this.pixelSize
-			);
+			this.ctx.fillRect(clientX, clientY, dmaSize, this.pixelSize);
 		}
 	}
+	this.isDrawing = false;
 }
 
 function main() {
@@ -84,7 +138,7 @@ function main() {
 	var canvas = document.querySelector('#dmaVisualizer');
 	var cDma = new dma(bpp);
 	var cDmaVisualizer = new dmaVisualizer(canvas, cDma);
-	cDmaVisualizer.generateGrid();
+	cDmaVisualizer.drawGrid();
 }
 
 window.addEventListener('load', main);
