@@ -1,10 +1,10 @@
-function cycle(isAbleBitplane, isAbleCopperWait, isAbleCopperSet) {
+function tCycle(isAbleBitplane, isAbleCopperWait, isAbleCopperSet) {
 	this.isAbleBitplane = isAbleBitplane;
 	this.isAbleCopperWait = isAbleCopperWait;
 	this.isAbleCopperSet = isAbleCopperSet;
 }
 
-function dma(bpp) {
+function tDma(bpp) {
 	// DMA may span across many frames, but let's ignore it for now
 	// There are 0xE4 cycles on row, and AFAIR 312 cycle rows.
 	var ddfstrt = {x: 0x38, y: 0x2C}; // display datafetch start - custom reg
@@ -28,14 +28,14 @@ function dma(bpp) {
 				f && (f <= bpp);
 			var isAbleCopperWait = !(c & 1);
 			var isAbleCopperSet = isAbleCopperWait && !isAbleBitplane;
-			this.slots[c][r] = new cycle(
+			this.slots[c][r] = new tCycle(
 				isAbleBitplane, isAbleCopperWait, isAbleCopperSet
 			);
 		}
 	}
 }
 
-function dmaVisualizer(canvas, dma) {
+function tDmaVisualizer(canvas, dma) {
 	this.canvas = canvas;
 	this.pixelSize = 3;
 	this.dmaSpacing = 1;
@@ -51,44 +51,76 @@ function dmaVisualizer(canvas, dma) {
 	this.ctx = canvas.getContext('2d');
 
 	canvas.visualizer = this;
-	canvas.pos = {x: 0, y: 0};
+	canvas.beginPos = {x: 0, y: 0};
 	canvas.scale = 1.0;
 	canvas.width = 640;
-	canvas.height = 480;
+	canvas.height = 256;
+
+	canvas.onmouseup = canvas.onmouseout = function(e) {
+		this.isDragged = false;
+	}
 
 	canvas.onmousedown = function(e) {
 		this.isDragged = true;
 		this.dragStart = {
-			x: e.clientX, y: e.clientY
+			x: e.offsetX, y: e.offsetY
 		};
 	}
 
 	canvas.onmousemove = function(e) {
 		if(this.isDragged) {
-			this.pos.x += e.clientX - this.dragStart.x;
-			this.pos.y += e.clientY - this.dragStart.y;
+			this.beginPos.x += e.offsetX - this.dragStart.x;
+			this.beginPos.y += e.offsetY - this.dragStart.y;
 
-			this.dragStart.x = e.clientX;
-			this.dragStart.y = e.clientY;
-			this.visualizer.drawGrid();
+			this.dragStart.x = e.offsetX;
+			this.dragStart.y = e.offsetY;
 		}
 	}
 
-	canvas.onmouseup = function(e) {
-		this.isDragged = false;
-	}
-
 	canvas.onwheel = function(e) {
+		// Get new scale
 		var clamp = function(x, bottom, top) {return Math.min(Math.max(x, bottom), top);};
 		this.scale = clamp(this.scale - Math.sign(e.deltaY), 1, 20);
 
+		// Get currently hovered cycle
+		var mousePos = {x: e.offsetX, y: e.offsetY};
+		var cycle = this.visualizer.getCycleXyFromScreenPos(mousePos);
+
+		// Scale view
 		this.visualizer.pixelSize = this.scale;
-		this.visualizer.drawGrid();
+
+		// Adjust scroll offsets so that hover will be on same cycle
+		var absPos = this.visualizer.getAbsPosFromCycleXy(cycle);
+		this.beginPos.x = Math.round(mousePos.x - absPos.x);
+		this.beginPos.y = Math.round(mousePos.y - absPos.y);
+
 		return false;
 	}
 }
 
-dmaVisualizer.prototype.drawGrid = function () {
+tDmaVisualizer.prototype.getCycleXyFromScreenPos = function(pos) {
+	return this.getCycleXyFromAbsPos({
+		x: pos.x - this.canvas.beginPos.x,
+		y: pos.y - this.canvas.beginPos.y
+	});
+}
+tDmaVisualizer.prototype.getCycleXyFromAbsPos = function(pos) {
+	var dmaSize = this.pixelSize * 2;
+	return {
+		x: (pos.x - this.dmaSpacing) / (this.dmaSpacing + dmaSize),
+		y: (pos.y - this.dmaSpacing) / (this.dmaSpacing + this.pixelSize)
+	};
+}
+
+tDmaVisualizer.prototype.getAbsPosFromCycleXy = function(cycle) {
+	var dmaSize = this.pixelSize * 2;
+	return {
+		x: this.dmaSpacing + (this.dmaSpacing + dmaSize) * cycle.x,
+		y: this.dmaSpacing + (this.dmaSpacing + this.pixelSize) * cycle.y
+	};
+}
+
+tDmaVisualizer.prototype.drawGrid = function () {
 	if(this.isDrawing) {
 		return;
 	}
@@ -101,19 +133,19 @@ dmaVisualizer.prototype.drawGrid = function () {
 
 	// Draw cycle grid
 	for (var y = 0; y < this.dma.cycleRows; ++y) {
-		var clientY = this.canvas.pos.y + this.dmaSpacing + (this.dmaSpacing + this.pixelSize) * y;
-		if(clientY < -(2*this.dmaSpacing + this.pixelSize)) {
+		var offsetY = this.canvas.beginPos.y + this.dmaSpacing + (this.dmaSpacing + this.pixelSize) * y;
+		if(offsetY + (2 * this.dmaSpacing + this.pixelSize) < 0) {
 			continue;
 		}
-		if(clientY > this.canvas.height) {
+		if(offsetY > this.canvas.height) {
 			break;
 		}
 		for (var x = 0; x < this.dma.cyclesInRow; ++x) {
-			var clientX = this.canvas.pos.x + this.dmaSpacing + (this.dmaSpacing + dmaSize) * x;
-			if(clientX < -(2*this.dmaSpacing + dmaSize)) {
+			var offsetX = this.canvas.beginPos.x + this.dmaSpacing + (this.dmaSpacing + dmaSize) * x;
+			if(offsetX + (2 * this.dmaSpacing + dmaSize) < 0) {
 				continue;
 			}
-			if(clientX > this.canvas.width) {
+			if(offsetX > this.canvas.width) {
 				break;
 			}
 			if(this.dma.slots[x][y].isAbleBitplane) {
@@ -126,7 +158,7 @@ dmaVisualizer.prototype.drawGrid = function () {
 			else {
 				this.ctx.fillStyle = '#FFF';
 			}
-			this.ctx.fillRect(clientX, clientY, dmaSize, this.pixelSize);
+			this.ctx.fillRect(offsetX, offsetY, dmaSize, this.pixelSize);
 		}
 	}
 	this.isDrawing = false;
@@ -136,9 +168,9 @@ function main() {
 	var bpp = 3;
 
 	var canvas = document.querySelector('#dmaVisualizer');
-	var cDma = new dma(bpp);
-	var cDmaVisualizer = new dmaVisualizer(canvas, cDma);
-	cDmaVisualizer.drawGrid();
+	var dma = new tDma(bpp);
+	var dmaVisualizer = new tDmaVisualizer(canvas, dma);
+	setInterval(function() {dmaVisualizer.drawGrid()}, 1/30);
 }
 
 window.addEventListener('load', main);
