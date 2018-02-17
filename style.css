@@ -1,3 +1,13 @@
 HTML, BODY {
 	background: black;
+	color: #fff;
+}
+
+#rightPanel {
+	position: absolute;
+	top: 0; bottom: 0; right: 0;
+	width: 400px;
+	padding: 1px;
+	background: #222;
+	border-left: solid 1px #555;
 }
