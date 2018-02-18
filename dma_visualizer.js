@@ -9,8 +9,7 @@ function tDmaVisualizer(eCanvas, Dma) {
 	eCanvas.visualizer = this;
 	eCanvas.BeginPos = {nX: 0, nY: 0};
 	eCanvas.nScale = 1.0;
-	eCanvas.width = 640;
-	eCanvas.height = 256;
+	this.resize(640, 256);
 
 	eCanvas.onmouseup = eCanvas.onmouseout = function(Evt) {
 		this.isDragged = false;
@@ -127,4 +126,9 @@ tDmaVisualizer.prototype.drawGrid = function () {
 		}
 	}
 	this.isDrawing = false;
+}
+
+tDmaVisualizer.prototype.resize = function(nWidth, nHeight) {
+	this.eCanvas.width = nWidth;
+	this.eCanvas.height = nHeight;
 }

@@ -17,7 +17,5 @@ window.addEventListener('load', function() {
 	var DmaVisualizer = new tDmaVisualizer(eCanvas, Dma);
 	setInterval(function() {DmaVisualizer.drawGrid()}, 1/30);
 
-	document.querySelector('#addCycle').addEventListener('click', function() {
-		Dma.appendCycleAfter({nX: 0, nY: 0});
-	})
+	var Ui = new tUi(Dma);
 });

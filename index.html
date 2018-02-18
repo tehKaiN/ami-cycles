@@ -5,6 +5,7 @@
 		<title>Ami Cycles</title>
 		<script type="text/javascript" src="dma.js" type="module"></script>
 		<script type="text/javascript" src="dma_visualizer.js" type="module"></script>
+		<script type="text/javascript" src="ui.js" type="module"></script>
 		<script type="text/javascript" src="main.js" type="module"></script>
 		<link rel="stylesheet" type="text/css" href="style.css">
 	</head>
@@ -14,6 +15,37 @@
 		</canvas>
 		<div id="rightPanel">
 			<form>
+				<fieldset>
+					<legend>Video DMA</legend>
+					<div>Fetch pattern:
+						<table id="videoDmaPattern">
+							<tr>
+								<td></td>
+								<td>3</td>
+								<td>5</td>
+								<td>1</td>
+								<td></td>
+								<td>2</td>
+								<td>4</td>
+								<td>0</td>
+							</tr>
+						</table>
+					</div>
+					<label>Enable<input type="checkbox" id="videoDmaEnabled"></label>
+					<label>Hires<input type="checkbox" id="videoDmaHires"></label>
+					<label>
+						Bitplanes:
+						<select id="videoDmaBpp">
+							<option value="1">1 bpp: 2 colors</option>
+							<option value="2">2 bpp: 4 colors</option>
+							<option value="3">3 bpp: 8 colors</option>
+							<option value="4">4 bpp: 16 colors</option>
+							<option value="5">5 bpp: 32 colors</option>
+							<option value="6">6 bpp: EHB/HAM</option>
+						</select>
+					</label>
+				</fieldset>
+				<input id="apply" type="button" value="Apply">
 				<input id="addCycle" type="button" value="Add cycle">
 			</form>
 		</div>

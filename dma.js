@@ -32,6 +32,14 @@ function tDma(nBpp) {
 	}
 }
 
+tDma.prototype.clear = function() {
+	for (var nCol = 0; nCol < this.nCyclesInRow; ++nCol) {
+		for (var nRow = 0; nRow < this.nCycleRows; ++nRow) {
+			this.pSlots[nCol][nRow].isFree = true;
+		}
+	}
+}
+
 tDma.prototype.fillCycleAt = function(CyclePos) {
 	var Cycle = this.pSlots[CyclePos.nX][CyclePos.nY];
 	if(!Cycle.isFree) {
@@ -55,6 +63,5 @@ tDma.prototype.appendCycleAfter = function(CyclePos) {
 			}
 		}
 	}
-
 	return false;
 }
