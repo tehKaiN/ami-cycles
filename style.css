@@ -45,6 +45,7 @@ FIELDSET {
 	height: 1.5em;
 	text-align: center;
 	transition: background-color .1s linear;
+	font-weight: bold;
 }
 
 #videoDmaPattern TD.free {
@@ -59,4 +60,39 @@ FIELDSET {
 	display: block;
 	margin: 10px auto 0 auto;
 	padding: 5px 20px;
+}
+
+.tooltip {
+	position: absolute;
+	top: 0; left: 0;
+}
+
+.tooltip .content {
+	background: #222;
+	padding: 5px;
+	border: solid 1px black;
+}
+
+.tooltip .arrow {
+	position: absolute;
+	left: 3px;
+	width: 10px;
+	height: 10px;
+	border-right: 1px solid black;
+	border-bottom: 1px solid black;
+	background: #222;
+}
+
+.tooltip .arrow.top {
+	top: -6px;
+	transform: rotate(-135deg);
+}
+
+.tooltip .arrow.bottom {
+	bottom: -6px;
+	transform: rotate(45deg);
+}
+
+.tooltip.hidden {
+	display: none;
 }
