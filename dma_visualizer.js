@@ -23,12 +23,12 @@ function tDmaVisualizer(eCanvas, Dma) {
 	this.Tooltip.setBody('<b>Dupa</b>');
 
 	this.eOverlay.onmouseup = this.eOverlay.onmouseout = function(Evt) {
-		this.isDragged = false;
+		this.visualizer.setDragging(false);
 		this.visualizer.Tooltip.hide();
 	}
 
 	this.eOverlay.onmousedown = function(Evt) {
-		this.isDragged = true;
+		this.visualizer.setDragging(true);
 		this.visualizer.Tooltip.hide();
 		this.DragStart = {
 			nX: Evt.offsetX, nY: Evt.offsetY
@@ -36,7 +36,7 @@ function tDmaVisualizer(eCanvas, Dma) {
 	}
 
 	this.eOverlay.onmousemove = function(Evt) {
-		if(this.isDragged) {
+		if(this.visualizer.isDragged) {
 			this.BeginPos.nX += Evt.offsetX - this.DragStart.nX;
 			this.BeginPos.nY += Evt.offsetY - this.DragStart.nY;
 
@@ -53,13 +53,22 @@ function tDmaVisualizer(eCanvas, Dma) {
 				var nDmaSize = this.visualizer.nPixelSize*2;
 				nX = CycleScreenPos.nX  + Math.round(nDmaSize/2);
 				nY = CycleScreenPos.nY;
-				this.visualizer.Tooltip.setBody('Cycle: ${0}<br>Free/Bitplane');
+				var sWhere;
 				if(nY < 100) {
-					this.visualizer.Tooltip.showAt({nX: nX, nY: nY + this.visualizer.nPixelSize}, 'bottom');
+					sWhere = 'bottom';
 				}
 				else {
-					this.visualizer.Tooltip.showAt({nX: nX, nY: nY}, 'top');
+					sWhere = 'top';
+					nY -= this.visualizer.nPixelSize + this.visualizer.nDmaSpacing;
 				}
+				var Cycle = this.visualizer.Dma.getCycleAt(CyclePos);
+				var sDescription = Cycle.isFree ? 'Free' : Cycle.sDescription;
+				var nCycleIdx = CyclePos.nX + CyclePos.nY * this.visualizer.Dma.nCyclesInRow;
+				this.visualizer.Tooltip.setBody(
+					`Cycle: ${nCycleIdx}<br>${sDescription}`
+				).showAt(
+					{nX: nX, nY: nY + this.visualizer.nPixelSize}, sWhere
+				);
 			}
 			else {
 				this.visualizer.Tooltip.hide();
@@ -85,6 +94,16 @@ function tDmaVisualizer(eCanvas, Dma) {
 		this.BeginPos.nY = Math.round(mousePos.nY - AbsPos.nY);
 
 		return false;
+	}
+}
+
+tDmaVisualizer.prototype.setDragging = function(isDragged) {
+	this.isDragged = isDragged;
+	if(isDragged) {
+		this.eOverlay.setAttribute('class', 'dragging');
+	}
+	else {
+		this.eOverlay.setAttribute('class', '');
 	}
 }
 
@@ -146,7 +165,7 @@ tDmaVisualizer.prototype.drawGrid = function () {
 			if(nOffsetX > this.eCanvas.width) {
 				break;
 			}
-			var Cycle = this.Dma.pSlots[nX][nY];
+			var Cycle = this.Dma.getCycleAt({nX: nX, nY: nY});
 			var nR = 128, nG = 128, nB = 128, nA;
 			if(Cycle.isFree) {
 				nA = 1.0;

@@ -96,3 +96,7 @@ FIELDSET {
 .tooltip.hidden {
 	display: none;
 }
+
+.dragging {
+	cursor: grabbing;
+}

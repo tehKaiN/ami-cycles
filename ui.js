@@ -93,7 +93,7 @@ tUi.prototype.applyCycles = function() {
 		var nPatternIdx = 0;
 		for(var nX = Ddfstrt.nX; nX < Ddfstop.nX; ++nX) {
 			if(this.pPattern[nPatternIdx] != -1 && this.pPattern[nPatternIdx] < nBpp) {
-				this.Dma.fillCycleAt({nX: nX, nY: nY});
+				this.Dma.fillCycleAt({nX: nX, nY: nY}, `Bitplane ${this.pPattern[nPatternIdx]}`);
 			}
 			nPatternIdx = (nPatternIdx+1) % 8;
 		}

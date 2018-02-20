@@ -11,14 +11,14 @@ function tDma(nBpp) {
 	var ddfstop = {nX: 0xD0, nY: 0x2C + 256}; // display datafetch stop
 	this.nCyclesInRow = 0xE4;
 	this.nCycleRows = 312;
-	this.pSlots = [];
+	this.pCycles = [];
 	this.nBpp = nBpp;
 
 	// Lores bitplane fetch scheme - 0 is free, first bitplane is 1
 	var bplFetchSchemes = [0, 4, 6, 2, 0, 3, 5, 1]; // 6bpp
 
 	for (var nCol = 0; nCol < this.nCyclesInRow; ++nCol) {
-		this.pSlots[nCol] = [];
+		this.pCycles[nCol] = [];
 		for (var nRow = 0; nRow < this.nCycleRows; ++nRow) {
 			// Determine for what given cycle may be used
 			var f = bplFetchSchemes[nCol % 8];
@@ -27,7 +27,7 @@ function tDma(nBpp) {
 				(nRow > ddfstrt.nY) && (nRow < ddfstop.nY) &&
 				f && (f <= nBpp);
 			var isAbleCopperWait = !(nCol & 1);
-			this.pSlots[nCol][nRow] = new tCycle(isAbleBitplane, isAbleCopperWait);
+			this.pCycles[nCol][nRow] = new tCycle(isAbleBitplane, isAbleCopperWait);
 		}
 	}
 }
@@ -35,33 +35,40 @@ function tDma(nBpp) {
 tDma.prototype.clear = function() {
 	for (var nCol = 0; nCol < this.nCyclesInRow; ++nCol) {
 		for (var nRow = 0; nRow < this.nCycleRows; ++nRow) {
-			this.pSlots[nCol][nRow].isFree = true;
+			this.pCycles[nCol][nRow].isFree = true;
+			this.pCycles[nCol][nRow].sDescription = '';
 		}
 	}
 }
 
-tDma.prototype.fillCycleAt = function(CyclePos) {
-	var Cycle = this.pSlots[CyclePos.nX][CyclePos.nY];
+tDma.prototype.fillCycleAt = function(CyclePos, sDescription) {
+	var Cycle = this.getCycleAt(CyclePos);
 	if(!Cycle.isFree) {
 		return false;
 	}
 
 	Cycle.isFree = false;
+	Cycle.sDescription = sDescription;
 	return true;
 }
 
-tDma.prototype.appendCycleAfter = function(CyclePos) {
+tDma.prototype.appendCycleAfter = function(CyclePos, sDescription) {
 	for (var nRow = 0; nRow < this.nCycleRows; ++nRow) {
 		for (var nCol = 0; nCol < this.nCyclesInRow; ++nCol) {
 			if(nCol < CyclePos.nX || nRow < CyclePos.nY) {
 				continue;
 			}
-			var Cycle = this.pSlots[nCol][nRow];
+			var Cycle = this.pCycles[nCol][nRow];
 			if(Cycle.isFree) {
 				Cycle.isFree = false;
+				Cycle.sDescription = sDescription;
 				return true;
 			}
 		}
 	}
 	return false;
+}
+
+tDma.prototype.getCycleAt = function(CyclePos) {
+	return this.pCycles[CyclePos.nX][CyclePos.nY];
 }
