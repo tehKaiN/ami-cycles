@@ -62,11 +62,31 @@ function tDmaVisualizer(eCanvas, Dma) {
 					nY -= this.visualizer.nPixelSize + this.visualizer.nDmaSpacing;
 				}
 				var Cycle = this.visualizer.Dma.getCycleAt(CyclePos);
-				var sDescription = Cycle.isFree ? 'Free' : Cycle.sDescription;
-				var nCycleIdx = CyclePos.nX + CyclePos.nY * this.visualizer.Dma.nCyclesInRow;
-				this.visualizer.Tooltip.setBody(
-					`Cycle: ${nCycleIdx}<br>${sDescription}`
-				).showAt(
+				var toHex = function(nVal, nDigitCnt) {
+					if(void 0 == nDigitCnt) {
+						return (nVal).toString(16).toUpperCase();
+					}
+					else {
+						return ('00000000' + (nVal).toString(16).toUpperCase()).substr(-nDigitCnt);
+					}
+				}
+				var sTooltipText = `Cycle: ${toHex(CyclePos.nX)},${toHex(CyclePos.nY)}`;
+				if(!Cycle.isFree) {
+					sTooltipText += `<br>${Cycle.sDescription}`;
+				}
+				else {
+					var NextNonFree = this.visualizer.Dma.findNextFreeCycle(
+						{nX: CyclePos.nX + 1, nY: CyclePos.nY}, false
+					);
+					if(NextNonFree != false) {
+						var nFreeSpace = this.visualizer.Dma.getCyclesBetweenPositions(
+							CyclePos, NextNonFree
+						);
+						sTooltipText += `<br>${nFreeSpace} free until filled`;
+					}
+				}
+
+				this.visualizer.Tooltip.setBody(sTooltipText).showAt(
 					{nX: nX, nY: nY + this.visualizer.nPixelSize}, sWhere
 				);
 			}

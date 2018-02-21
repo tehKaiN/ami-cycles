@@ -52,16 +52,17 @@ tDma.prototype.fillCycleAt = function(CyclePos, sDescription) {
 	return true;
 }
 
-tDma.prototype.appendCycleAfter = function(CyclePos, sDescription) {
-	var nCol = CyclePos.nX;
-	var nRow = CyclePos.nY;
+tDma.prototype.findNextFreeCycle = function(CyclePosStart, isFree) {
+	if(void 0 == isFree) {
+		isFree = true;
+	}
+	var nCol = CyclePosStart.nX;
+	var nRow = CyclePosStart.nY;
 	while(nRow < this.nCycleRows) {
 		while(nCol < this.nCyclesInRow) {
 			var Cycle = this.pCycles[nCol][nRow];
-			if(Cycle.isFree) {
-				Cycle.isFree = false;
-				Cycle.sDescription = sDescription;
-				return true;
+			if(Cycle.isFree == isFree) {
+				return {nX: nCol, nY: nRow};
 			}
 			++nCol;
 		}
@@ -69,6 +70,14 @@ tDma.prototype.appendCycleAfter = function(CyclePos, sDescription) {
 		++nRow;
 	}
 	return false;
+}
+
+tDma.prototype.appendCycleAfter = function(CyclePos, sDescription) {
+	var FreePos = this.findNextFreeCycle(CyclePos);
+	if(FreePos == false) {
+		return false;
+	}
+	this.fillCycleAt(FreePos, sDescription);
 }
 
 tDma.prototype.getCycleAt = function(CyclePos) {
@@ -79,4 +88,13 @@ tDma.prototype.getCycleAt = function(CyclePos) {
 		return false;
 	}
 	return this.pCycles[CyclePos.nX][CyclePos.nY];
+}
+
+tDma.prototype.getCycleIdx = function(CyclePos) {
+	return this.nCyclesInRow * CyclePos.nY + CyclePos.nX;
+}
+
+tDma.prototype.getCyclesBetweenPositions = function(CycleStartPos, CycleEndPos) {
+	var nCycles = this.getCycleIdx(CycleEndPos) - this.getCycleIdx(CycleStartPos);
+	return nCycles;
 }
