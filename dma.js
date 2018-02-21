@@ -53,22 +53,31 @@ tDma.prototype.fillCycleAt = function(CyclePos, sDescription) {
 }
 
 tDma.prototype.appendCycleAfter = function(CyclePos, sDescription) {
-	for (var nRow = 0; nRow < this.nCycleRows; ++nRow) {
-		for (var nCol = 0; nCol < this.nCyclesInRow; ++nCol) {
-			if(nCol < CyclePos.nX || nRow < CyclePos.nY) {
-				continue;
-			}
+	var nCol = CyclePos.nX;
+	var nRow = CyclePos.nY;
+	while(nRow < this.nCycleRows) {
+		while(nCol < this.nCyclesInRow) {
 			var Cycle = this.pCycles[nCol][nRow];
 			if(Cycle.isFree) {
+				console.log(`appended cycle ${sDescription} at ${nCol},${nRow}`);
 				Cycle.isFree = false;
 				Cycle.sDescription = sDescription;
 				return true;
 			}
+			++nCol;
 		}
+		nCol = 0;
+		++nRow;
 	}
 	return false;
 }
 
 tDma.prototype.getCycleAt = function(CyclePos) {
+	if(
+		void 0 == this.pCycles[CyclePos.nX] ||
+		void 0 == this.pCycles[CyclePos.nX][CyclePos.nY]
+	) {
+		return false;
+	}
 	return this.pCycles[CyclePos.nX][CyclePos.nY];
 }

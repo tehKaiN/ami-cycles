@@ -21,6 +21,7 @@ INPUT, SELECT {
 	background: #222;
 	border-left: solid 1px #555;
 	box-shadow: 0 0 10px black;
+	z-index: 1000;
 }
 
 LABEL {
@@ -99,4 +100,19 @@ FIELDSET {
 
 .dragging {
 	cursor: grabbing;
+}
+
+.coplist {
+	color: white;
+	width: 100%;
+	resize: vertical;
+	border: solid 1px black;
+	background: #444;
+	transition: background-color .1s linear;
+	white-space: pre;
+	height: 10em;
+}
+
+.coplist:hover, .coplist:focus {
+	background: #555;
 }

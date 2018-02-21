@@ -5,6 +5,7 @@ function tUi(Dma) {
 	this.eBpp = document.querySelector('#videoDmaBpp');
 	this.eVideoPattern = document.querySelector('#videoDmaPattern');
 	this.eApply = document.querySelector('#apply');
+	this.eCopperInput = document.querySelector('#copperInput');
 
 	// Events
 	var Ui = this;
@@ -89,6 +90,46 @@ tUi.prototype.applyCycles = function() {
 	var nBpp = this.getBpp();
 
 	this.Dma.clear();
+
+	// Stuff of top priority
+	for(var nY = 0; nY < this.Dma.nCycleRows; ++nY) {
+		// Memory refresh
+		this.Dma.fillCycleAt({nX: 0xE3, nY: nY}, "Mem refresh: 1/4");
+		this.Dma.fillCycleAt({nX: 0x01, nY: nY}, "Mem refresh: 2/4");
+		this.Dma.fillCycleAt({nX: 0x03, nY: nY}, "Mem refresh: 3/4");
+		this.Dma.fillCycleAt({nX: 0x05, nY: nY}, "Mem refresh: 4/4");
+
+		// Disk
+		this.Dma.fillCycleAt({nX: 0x07, nY: nY}, "Disk: 1/3");
+		this.Dma.fillCycleAt({nX: 0x09, nY: nY}, "Disk: 2/3");
+		this.Dma.fillCycleAt({nX: 0x0B, nY: nY}, "Disk: 3/3");
+
+		// Audio
+		this.Dma.fillCycleAt({nX: 0x0D, nY: nY}, "Audio: 1/4");
+		this.Dma.fillCycleAt({nX: 0x0F, nY: nY}, "Audio: 2/4");
+		this.Dma.fillCycleAt({nX: 0x11, nY: nY}, "Audio: 3/4");
+		this.Dma.fillCycleAt({nX: 0x13, nY: nY}, "Audio: 4/4");
+
+		// Sprites
+		this.Dma.fillCycleAt({nX: 0x15, nY: nY}, "Sprite 1: 1/2");
+		this.Dma.fillCycleAt({nX: 0x17, nY: nY}, "Sprite 1: 2/2");
+		this.Dma.fillCycleAt({nX: 0x19, nY: nY}, "Sprite 2: 1/2");
+		this.Dma.fillCycleAt({nX: 0x1B, nY: nY}, "Sprite 2: 2/2");
+		this.Dma.fillCycleAt({nX: 0x1D, nY: nY}, "Sprite 3: 1/2");
+		this.Dma.fillCycleAt({nX: 0x1F, nY: nY}, "Sprite 3: 2/2");
+		this.Dma.fillCycleAt({nX: 0x21, nY: nY}, "Sprite 4: 1/2");
+		this.Dma.fillCycleAt({nX: 0x23, nY: nY}, "Sprite 4: 2/2");
+		this.Dma.fillCycleAt({nX: 0x25, nY: nY}, "Sprite 5: 1/2");
+		this.Dma.fillCycleAt({nX: 0x27, nY: nY}, "Sprite 5: 2/2");
+		this.Dma.fillCycleAt({nX: 0x29, nY: nY}, "Sprite 6: 1/2");
+		this.Dma.fillCycleAt({nX: 0x2B, nY: nY}, "Sprite 6: 2/2");
+		this.Dma.fillCycleAt({nX: 0x2D, nY: nY}, "Sprite 7: 1/2");
+		this.Dma.fillCycleAt({nX: 0x2F, nY: nY}, "Sprite 7: 2/2");
+		this.Dma.fillCycleAt({nX: 0x31, nY: nY}, "Sprite 8: 1/2");
+		this.Dma.fillCycleAt({nX: 0x33, nY: nY}, "Sprite 8: 2/2");
+	}
+
+	// Then goes Bitplanes
 	for(var nY = Ddfstrt.nY; nY < Ddfstop.nY; ++nY) {
 		var nPatternIdx = 0;
 		for(var nX = Ddfstrt.nX; nX < Ddfstop.nX; ++nX) {
@@ -98,6 +139,35 @@ tUi.prototype.applyCycles = function() {
 			nPatternIdx = (nPatternIdx+1) % 8;
 		}
 	}
+
+	// Copper uses what's left for him
+	var pCopCmds = copListParseList(this.eCopperInput.value);
+	console.log(pCopCmds);
+	if(pCopCmds) {
+		var CopMovePos = {nX: 0, nY: 0};
+		for(var i = 0; i < pCopCmds.length; ++i) {
+			if(!pCopCmds[i].isValid) {
+				console.log(pCopCmds[i]);
+				break;
+			}
+			if(pCopCmds[i].sCmdType == 'wait') {
+				this.Dma.appendCycleAfter(CopMovePos, `WAIT 1/3: ${pCopCmds[i].Pos.nX},${pCopCmds[i].Pos.nY}`);
+				this.Dma.appendCycleAfter(CopMovePos, `WAIT 2/3: ${pCopCmds[i].Pos.nX},${pCopCmds[i].Pos.nY}`);
+				CopMovePos = {nX: pCopCmds[i].Pos.nX, nY: pCopCmds[i].Pos.nY};
+				this.Dma.appendCycleAfter(CopMovePos, `WAIT 3/3: ${pCopCmds[i].Pos.nX},${pCopCmds[i].Pos.nY}`);
+			}
+			else if(pCopCmds[i].sCmdType == 'move') {
+				this.Dma.appendCycleAfter(CopMovePos, `MOVE 1/2: ${pCopCmds[i].sLine}`);
+				this.Dma.appendCycleAfter(CopMovePos, `MOVE 2/2: ${pCopCmds[i].sLine}`);
+			}
+			// Add cycles
+		}
+	}
+
+	// Blitter and CPU take rest of cycles alternating between each other.
+	// CPU is working on even cycles. If BLITHOG is enabled, blitter is able to
+	// steal one odd cycle from CPU, making them work in 3:1 ratio
+	// (blitter: odd-even-odd, CPU: even).
 }
 
 tUi.prototype.resizeVisualizer = function() {
