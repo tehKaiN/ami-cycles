@@ -142,12 +142,10 @@ tUi.prototype.applyCycles = function() {
 
 	// Copper uses what's left for him
 	var pCopCmds = copListParseList(this.eCopperInput.value);
-	console.log(pCopCmds);
 	if(pCopCmds) {
 		var CopMovePos = {nX: 0, nY: 0};
 		for(var i = 0; i < pCopCmds.length; ++i) {
 			if(!pCopCmds[i].isValid) {
-				console.log(pCopCmds[i]);
 				break;
 			}
 			if(pCopCmds[i].sCmdType == 'wait') {

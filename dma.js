@@ -59,7 +59,6 @@ tDma.prototype.appendCycleAfter = function(CyclePos, sDescription) {
 		while(nCol < this.nCyclesInRow) {
 			var Cycle = this.pCycles[nCol][nRow];
 			if(Cycle.isFree) {
-				console.log(`appended cycle ${sDescription} at ${nCol},${nRow}`);
 				Cycle.isFree = false;
 				Cycle.sDescription = sDescription;
 				return true;
